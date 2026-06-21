@@ -369,30 +369,7 @@ ABARTH SOCHI
     );
   }
 
-  if (data === "contacts") {
-    return bot.sendMessage(
-      chatId,
-`━━━━━━━━━━━━━━
-
-📞 КОНТАКТЫ
-
-🦂 ABARTH SOCHI
-
-👤 Илья
-
-📱 ${PHONE_DISPLAY}
-
-━━━━━━━━━━━━━━`,
-      {
-        reply_markup: {
-          inline_keyboard: [
-    [{ text: "💬 WhatsApp", url: WHATSAPP_LINK }],
-    [{ text: "🗺 Яндекс Карты", url: YANDEX_MAPS_URL }]
-          ]
-        }
-      }
-    );
-  }
+  
 
   if (data.startsWith("car_")) {
     const carCode = data.replace("car_", "");
