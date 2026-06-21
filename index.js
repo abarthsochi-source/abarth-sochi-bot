@@ -60,4 +60,4 @@ const confirmMenu = {
   }
 };
 
-bot.onText(/\/start
+  bot.onText(/\/start/, (msg) => {
