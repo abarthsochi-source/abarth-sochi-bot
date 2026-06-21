@@ -227,7 +227,6 @@ function buildRequestText(user, from) {
 НОВАЯ ЗАЯВКА
 
 ━━━━━━━━━━━━━━
-
 🚗 Автомобиль
 ${user.car}
 
@@ -241,7 +240,6 @@ ${user.days} суток
 ${user.delivery ? "Да, +1 500 ₽" : "Нет"}
 
 ━━━━━━━━━━━━━━
-
 💰 Аренда
 ${formatRub(calc.rentBeforeDiscount)}
 
@@ -255,7 +253,6 @@ ${formatRub(calc.total)}
 ${formatRub(DEPOSIT)}
 
 ━━━━━━━━━━━━━━
-
 👤 Клиент
 ${user.name}
 
@@ -390,9 +387,8 @@ ABARTH SOCHI
       {
         reply_markup: {
           inline_keyboard: [
-            [{ text: "📞 Позвонить", url: PHONE_LINK }],
-            [{ text: "💬 WhatsApp", url: WHATSAPP_LINK }],
-            [{ text: "🗺 Яндекс Карты", url: YANDEX_MAPS_URL }]
+    [{ text: "💬 WhatsApp", url: WHATSAPP_LINK }],
+    [{ text: "🗺 Яндекс Карты", url: YANDEX_MAPS_URL }]
           ]
         }
       }
@@ -408,7 +404,6 @@ ABARTH SOCHI
 
     return bot.sendMessage(
       chatId,
-`████░░░░░░
 
 📅 Напишите дату аренды
 
@@ -454,7 +449,6 @@ bot.on("message", (msg) => {
 
     return bot.sendMessage(
       chatId,
-`██████░░░░
 
 ⏳ На сколько суток?
 
@@ -477,7 +471,6 @@ bot.on("message", (msg) => {
 
     return bot.sendMessage(
       chatId,
-`███████░░░
 
 🚘 Нужна ли подача автомобиля?`,
       deliveryMenu()
@@ -509,25 +502,17 @@ bot.on("message", (msg) => {
 ✅ ПРОВЕРЬТЕ ЗАЯВКУ
 
 🚗 ${user.car}
-
 📅 ${user.date}
-
 ⏳ ${user.days} суток
+🚘 Подача: ${user.delivery ? "Да" : "Нет"}
 
-🚘 Подача
-${user.delivery ? "Да" : "Нет"}
+💳 К оплате:
+${formatRub(calculatePrice(user.days, user.delivery).total)}
 
-${buildCalculationText(user)}
+🔒 Залог:
+${formatRub(DEPOSIT)}
 
-👤 ${user.name}
-
-📞 ${user.phone}
-
-💬 ${user.comment || "—"}
-
-━━━━━━━━━━━━━━
-
-Отправить заявку?`,
+Отправить заявку?
       confirmMenu()
     );
   }
