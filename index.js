@@ -61,8 +61,7 @@ function mainMenu() {
         [{ text: "💰 Стоимость", callback_data: "price" }],
         [{ text: "📋 Условия аренды", callback_data: "rules" }],
         [{ text: "⭐ Отзывы", callback_data: "reviews" }],
-        [{ text: "📞 Контакты", callback_data: "contacts" }]
-      ]
+  ]
     }
   };
 }
