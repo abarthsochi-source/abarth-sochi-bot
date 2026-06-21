@@ -150,8 +150,13 @@ bot.on("callback_query", async (q) => {
 
 Telegram: ${q.from.username ? "@" + q.from.username : "не указан"}`;
 
-    await bot.sendMessage(GROUP_ID, requestText);
-    users[chatId] = {};
+    try {
+  await bot.sendMessage(GROUP_ID, requestText);
+} catch (err) {
+  console.error("Ошибка отправки заявки в группу:", err.message);
+  return bot.sendMessage(chatId, "❌ Заявка заполнена, но не отправилась в группу. Проверьте GROUP_ID и права бота.");
+}
+
 
     return bot.sendMessage(
       chatId,
