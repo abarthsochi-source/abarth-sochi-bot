@@ -23,31 +23,27 @@ const WHITE_PHOTO_ID = "AgACAgIAAxkBAAN5ajhUb0wlnEeYHvIQWl7B-heU5r0AAvsaaxtWV8BJ
 const GREY_PHOTO_ID = "AgACAgIAAxkBAAN3ajhT1vNePAFWkSGNBQWUAUMBiEUAAvgaaxtWV8BJTMxw1vwa1nABAAMCAAN5AAM8BA";
 
 const YANDEX_MAPS_URL = "https://yandex.ru/navi/org/abarth/86845691589?si=qf1kygj05v7c6wchjw45efrdqm";
-const PHONE_DISPLAY = "+7 (928) 400-07-16";
-const PHONE_LINK = "tel:+79284000716";
-const WHATSAPP_LINK = "https://wa.me/79284000716";
 
-function formatRub(amount) {
-  return `${amount.toLocaleString("ru-RU")} ₽`;
+const PHONE_TEXT = "+7 (928) 400-07-16";
+const WHATSAPP_TEXT = "https://wa.me/79284000716";
+
+function money(n) {
+  return `${n.toLocaleString("ru-RU")} ₽`;
 }
 
 function calculatePrice(days, delivery) {
   const freeDays = Math.floor(days / 7);
-  const paidDays = days - freeDays;
   const rentBeforeDiscount = days * PRICE_PER_DAY;
   const discount = freeDays * PRICE_PER_DAY;
-  const rentTotal = paidDays * PRICE_PER_DAY;
-  const deliveryTotal = delivery ? DELIVERY_PRICE : 0;
-  const total = rentTotal + deliveryTotal;
+  const rentAfterDiscount = rentBeforeDiscount - discount;
+  const deliveryCost = delivery ? DELIVERY_PRICE : 0;
+  const total = rentAfterDiscount + deliveryCost;
 
   return {
-    days,
     freeDays,
-    paidDays,
     rentBeforeDiscount,
     discount,
-    rentTotal,
-    deliveryTotal,
+    deliveryCost,
     total
   };
 }
@@ -60,8 +56,9 @@ function mainMenu() {
         [{ text: "📸 Каталог", callback_data: "catalog" }],
         [{ text: "💰 Стоимость", callback_data: "price" }],
         [{ text: "📋 Условия аренды", callback_data: "rules" }],
-        [{ text: "⭐ Отзывы", callback_data: "reviews" }],
-  ]
+        [{ text: "⭐ Отзывы / Яндекс Карты", callback_data: "reviews" }],
+        [{ text: "📞 Контакты", callback_data: "contacts" }]
+      ]
     }
   };
 }
@@ -70,7 +67,7 @@ function backMenu() {
   return {
     reply_markup: {
       inline_keyboard: [
-        [{ text: "⬅️ В главное меню", callback_data: "main" }]
+        [{ text: "⬅️ Главное меню", callback_data: "main" }]
       ]
     }
   };
@@ -87,17 +84,6 @@ function deliveryMenu() {
   };
 }
 
-function continueMenu() {
-  return {
-    reply_markup: {
-      inline_keyboard: [
-        [{ text: "✅ Продолжить оформление", callback_data: "continue_order" }],
-        [{ text: "⬅️ В главное меню", callback_data: "main" }]
-      ]
-    }
-  };
-}
-
 function confirmMenu() {
   return {
     reply_markup: {
@@ -108,68 +94,6 @@ function confirmMenu() {
     }
   };
 }
-async function showMain(chatId) {
-  return bot.sendMessage(
-    chatId,
-`━━━━━━━━━━━━━━
-
-🦂 ABARTH SOCHI
-
-Итальянские кабриолеты
-для ярких эмоций в Сочи
-
-━━━━━━━━━━━━━━
-
-Выберите действие:`,
-    mainMenu()
-  );
-}
-
-async function sendCarCards(chatId) {
-  await bot.sendPhoto(chatId, WHITE_PHOTO_ID, {
-    caption:
-`━━━━━━━━━━━━━━
-
-⚪ WHITE ABARTH CABRIO
-
-Итальянский кабриолет
-для ярких поездок по Сочи
-
-💰 7 000 ₽ / сутки
-🎁 7 суток = оплата за 6
-🔒 Залог 5 000 ₽
-📏 Пробег 200 км / сутки
-
-━━━━━━━━━━━━━━`,
-    reply_markup: {
-      inline_keyboard: [
-        [{ text: "✅ Выбрать White Abarth", callback_data: "car_white" }]
-      ]
-    }
-  });
-
-  await bot.sendPhoto(chatId, GREY_PHOTO_ID, {
-    caption:
-`━━━━━━━━━━━━━━
-
-⚫ GREY ABARTH CABRIO
-
-Стиль, звук и эмоции
-в каждой поездке
-
-💰 7 000 ₽ / сутки
-🎁 7 суток = оплата за 6
-🔒 Залог 5 000 ₽
-📏 Пробег 200 км / сутки
-
-━━━━━━━━━━━━━━`,
-    reply_markup: {
-      inline_keyboard: [
-        [{ text: "✅ Выбрать Grey Abarth", callback_data: "car_grey" }]
-      ]
-    }
-  });
-}
 
 function carTitle(code) {
   if (code === "white") return "White Abarth Cabrio";
@@ -177,143 +101,142 @@ function carTitle(code) {
   return "Abarth Cabrio";
 }
 
-function buildCalculationText(user) {
+function shortCalc(user) {
   const calc = calculatePrice(user.days, user.delivery);
 
-  return `━━━━━━━━━━━━━━
-
-💰 РАСЧЕТ АРЕНДЫ
+  return `💰 РАСЧЕТ
 
 🚗 ${user.car}
-
 📅 ${user.date}
 ⏳ ${user.days} суток
+🚘 ${user.delivery ? "Подача +1 500 ₽" : "Без подачи"}
 
-━━━━━━━━━━━━━━
+Аренда: ${money(calc.rentBeforeDiscount)}
+Скидка: -${money(calc.discount)}
+Итого: ${money(calc.total)}
 
-Стоимость аренды
-
-${user.days} × ${formatRub(PRICE_PER_DAY)}
-${formatRub(calc.rentBeforeDiscount)}
-
-🎁 Акция 6+1
-
-−${formatRub(calc.discount)}
-
-🚘 Подача автомобиля
-
-${user.delivery ? "+ " + formatRub(DELIVERY_PRICE) : "не требуется"}
-
-━━━━━━━━━━━━━━
-
-💳 ИТОГО
-
-${formatRub(calc.total)}
-
-🔒 Залог ${formatRub(DEPOSIT)}
-📏 Пробег 200 км / сутки
-
-━━━━━━━━━━━━━━`;
+Залог: ${money(DEPOSIT)}`;
 }
 
-function buildRequestText(user, from) {
+function requestText(user, from) {
   const calc = calculatePrice(user.days, user.delivery);
 
-  return `━━━━━━━━━━━━━━
-
-🦂 ABARTH SOCHI
-
+  return `🦂 ABARTH SOCHI
 НОВАЯ ЗАЯВКА
 
-━━━━━━━━━━━━━━
-🚗 Автомобиль
-${user.car}
+🚗 ${user.car}
+📅 ${user.date}
+⏳ ${user.days} суток
+🚘 ${user.delivery ? "Подача +1 500 ₽" : "Без подачи"}
 
-📅 Дата
-${user.date}
+💰 Аренда: ${money(calc.rentBeforeDiscount)}
+🎁 Скидка: -${money(calc.discount)}
+💳 Итого: ${money(calc.total)}
+🔒 Залог: ${money(DEPOSIT)}
 
-⏳ Срок
-${user.days} суток
+👤 ${user.name}
+📞 ${user.phone}
+💬 ${user.comment || "—"}
 
-🚘 Подача
-${user.delivery ? "Да, +1 500 ₽" : "Нет"}
+Telegram: ${from.username ? "@" + from.username : "не указан"}`;
+}
 
-━━━━━━━━━━━━━━
-💰 Аренда
-${formatRub(calc.rentBeforeDiscount)}
+async function showMain(chatId) {
+  return bot.sendMessage(
+    chatId,
+`🦂 ABARTH SOCHI
 
-🎁 Скидка
-−${formatRub(calc.discount)}
+Итальянские кабриолеты
+для ярких эмоций в Сочи.
 
-💳 ИТОГО
-${formatRub(calc.total)}
+Выберите действие:`,
+    mainMenu()
+  );
+}
 
-🔒 Залог
-${formatRub(DEPOSIT)}
+async function sendCarCards(chatId, withButtons = true) {
+  const whiteOptions = {
+    caption:
+`⚪ WHITE ABARTH CABRIO
 
-━━━━━━━━━━━━━━
-👤 Клиент
-${user.name}
+Итальянский кабриолет
+для ярких поездок по Сочи.
 
-📞 Телефон
-${user.phone}
+7 000 ₽ / сутки
+7 суток = оплата за 6
+Залог: 5 000 ₽`
+  };
 
-💬 Комментарий
-${user.comment || "—"}
+  const greyOptions = {
+    caption:
+`⚫ GREY ABARTH CABRIO
 
-Telegram
-${from.username ? "@" + from.username : "не указан"}
+Стиль, звук и эмоции
+в каждой поездке.
 
-━━━━━━━━━━━━━━`;
+7 000 ₽ / сутки
+7 суток = оплата за 6
+Залог: 5 000 ₽`
+  };
+
+  if (withButtons) {
+    whiteOptions.reply_markup = {
+      inline_keyboard: [
+        [{ text: "✅ Выбрать White Abarth", callback_data: "car_white" }]
+      ]
+    };
+
+    greyOptions.reply_markup = {
+      inline_keyboard: [
+        [{ text: "✅ Выбрать Grey Abarth", callback_data: "car_grey" }]
+      ]
+    };
+  }
+
+  await bot.sendPhoto(chatId, WHITE_PHOTO_ID, whiteOptions);
+  await bot.sendPhoto(chatId, GREY_PHOTO_ID, greyOptions);
 }
 
 bot.onText(/\/start/, (msg) => {
   users[msg.chat.id] = {};
   showMain(msg.chat.id);
 });
-bot.on("callback_query", async (q) => {
-  const chatId = q.message.chat.id;
-  const data = q.data;
+bot.on("callback_query", async (query) => {
+  const chatId = query.message.chat.id;
+  const data = query.data;
 
   if (!users[chatId]) users[chatId] = {};
   const user = users[chatId];
 
-  await bot.answerCallbackQuery(q.id);
+  await bot.answerCallbackQuery(query.id);
 
   if (data === "main") {
     return showMain(chatId);
   }
 
-  if (data === "book") {
-    users[chatId] = {};
-    return sendCarCards(chatId);
+  if (data === "catalog") {
+    return sendCarCards(chatId, false);
   }
 
-  if (data === "catalog") {
-    return sendCarCards(chatId);
+  if (data === "book") {
+    return sendCarCards(chatId, true);
   }
 
   if (data === "price") {
     return bot.sendMessage(
       chatId,
-`━━━━━━━━━━━━━━
+`💰 СТОИМОСТЬ
 
-💰 СТОИМОСТЬ
+1 сутки — 7 000 ₽
 
-7 000 ₽ / сутки
+🎁 Акция:
+7 суток = оплата за 6
 
-🎁 Акция 6+1
-
-При аренде на 7 суток
-оплачивается только 6.
-
-🚘 Подача автомобиля
+🚘 Подача авто:
 +1 500 ₽
 
-🔒 Возвратный залог
-5 000 ₽
-
-━━━━━━━━━━━━━━`,
+🔒 Залог:
+5 000 ₽`,
       backMenu()
     );
   }
@@ -321,26 +244,13 @@ bot.on("callback_query", async (q) => {
   if (data === "rules") {
     return bot.sendMessage(
       chatId,
-`━━━━━━━━━━━━━━
+`📋 УСЛОВИЯ
 
-📋 УСЛОВИЯ АРЕНДЫ
-
-👤 Возраст водителя
-от 22 лет
-
-📏 Лимит пробега
-200 км / сутки
-
-🔒 Возвратный залог
-5 000 ₽
-
-🚘 Подача автомобиля
-1 500 ₽
-
-🎁 Акция
-7 суток = оплата за 6
-
-━━━━━━━━━━━━━━`,
+• Возраст от 21 года
+• Стаж от 3 лет
+• Паспорт РФ
+• Залог 5 000 ₽
+• Бережная эксплуатация`,
       backMenu()
     );
   }
@@ -348,28 +258,40 @@ bot.on("callback_query", async (q) => {
   if (data === "reviews") {
     return bot.sendMessage(
       chatId,
-`━━━━━━━━━━━━━━
+`⭐ ОТЗЫВЫ
 
-⭐ ОТЗЫВЫ КЛИЕНТОВ
-
-ABARTH SOCHI
-
-Нам доверяют жители
-и гости Сочи.
-
-━━━━━━━━━━━━━━`,
+Нас можно найти на Яндекс Картах.`,
       {
         reply_markup: {
           inline_keyboard: [
             [{ text: "🗺 Яндекс Карты", url: YANDEX_MAPS_URL }],
-            [{ text: "⬅️ В главное меню", callback_data: "main" }]
+            [{ text: "⬅️ Главное меню", callback_data: "main" }]
           ]
         }
       }
     );
   }
 
-  
+  if (data === "contacts") {
+    return bot.sendMessage(
+      chatId,
+`📞 КОНТАКТЫ
+
+🦂 ABARTH SOCHI
+
+👤 Илья
+📱 ${PHONE_TEXT}`,
+      {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: "💬 WhatsApp", url: WHATSAPP_TEXT }],
+            [{ text: "🗺 Яндекс Карты", url: YANDEX_MAPS_URL }],
+            [{ text: "⬅️ Главное меню", callback_data: "main" }]
+          ]
+        }
+      }
+    );
+  }
 
   if (data.startsWith("car_")) {
     const carCode = data.replace("car_", "");
@@ -380,161 +302,117 @@ ABARTH SOCHI
 
     return bot.sendMessage(
       chatId,
-
-📅 Напишите дату аренды
-
-Например:
-
-23 июня`
+      "📅 Напишите дату аренды\n\nНапример:\n23 июня"
     );
   }
 
-  if (data === "delivery_yes" || data === "delivery_no") {
-    user.delivery = data === "delivery_yes";
-
-    await bot.sendMessage(
-      chatId,
-      buildCalculationText(user),
-      continueMenu()
-    );
-
+  if (data === "delivery_yes") {
+    user.delivery = true;
     user.step = "name";
 
-    return;
+    return bot.sendMessage(chatId, "👤 Ваше имя?");
   }
 
-  if (data === "continue_order") {
+  if (data === "delivery_no") {
+    user.delivery = false;
+    user.step = "name";
+
+    return bot.sendMessage(chatId, "👤 Ваше имя?");
+  }
+
+  if (data === "send_request") {
+    await bot.sendMessage(
+      GROUP_ID,
+      requestText(user, query.from)
+    );
+
+    users[chatId] = {};
+
     return bot.sendMessage(
       chatId,
-      "👤 Как к вам обращаться?"
+      "✅ Заявка отправлена. Мы скоро свяжемся с вами."
     );
   }
-});
-bot.on("message", (msg) => {
-  const chatId = msg.chat.id;
-  const text = msg.text;
 
-  if (!text || text.startsWith("/")) return;
-  if (!users[chatId]) users[chatId] = {};
+  if (data === "cancel") {
+    users[chatId] = {};
+    return showMain(chatId);
+  }
+});
+
+bot.on("message", async (msg) => {
+  if (!msg.text || msg.text.startsWith("/")) return;
+
+  const chatId = msg.chat.id;
+
+  if (!users[chatId]) return;
 
   const user = users[chatId];
 
   if (user.step === "date") {
-    user.date = text;
+    user.date = msg.text;
     user.step = "days";
 
     return bot.sendMessage(
       chatId,
-
-⏳ На сколько суток?
-
-Напишите число.
-Например:
-
-7`
+      "⏳ На сколько суток?\n\nНапример:\n7"
     );
   }
 
   if (user.step === "days") {
-    const days = parseInt(text, 10);
+    user.days = parseInt(msg.text);
 
-    if (!days || days < 1) {
-      return bot.sendMessage(chatId, "Напишите количество суток числом. Например: 7");
+    if (!user.days || user.days < 1) {
+      return bot.sendMessage(chatId, "Введите количество суток.");
     }
 
-    user.days = days;
     user.step = "delivery";
 
     return bot.sendMessage(
       chatId,
-
-🚘 Нужна ли подача автомобиля?`,
+      "🚘 Нужна ли подача автомобиля?",
       deliveryMenu()
     );
   }
 
   if (user.step === "name") {
-    user.name = text;
+    user.name = msg.text;
     user.step = "phone";
 
-    return bot.sendMessage(chatId, "📞 Напишите номер телефона:");
+    return bot.sendMessage(chatId, "📞 Ваш номер телефона?");
   }
 
   if (user.step === "phone") {
-    user.phone = text;
+    user.phone = msg.text;
     user.step = "comment";
 
-    return bot.sendMessage(chatId, "💬 Комментарий? Если нет — напишите «нет».");
+    return bot.sendMessage(
+      chatId,
+      "💬 Комментарий?\nЕсли нет — напишите: нет"
+    );
   }
 
   if (user.step === "comment") {
-    user.comment = text.toLowerCase() === "нет" ? "" : text;
+    user.comment = msg.text.toLowerCase() === "нет" ? "" : msg.text;
     user.step = "confirm";
 
     return bot.sendMessage(
       chatId,
-`━━━━━━━━━━━━━━
-
-✅ ПРОВЕРЬТЕ ЗАЯВКУ
+      `✅ ПРОВЕРЬТЕ ЗАЯВКУ
 
 🚗 ${user.car}
 📅 ${user.date}
 ⏳ ${user.days} суток
-🚘 Подача: ${user.delivery ? "Да" : "Нет"}
 
-💳 К оплате:
-${formatRub(calculatePrice(user.days, user.delivery).total)}
+${shortCalc(user)}
 
-🔒 Залог:
-${formatRub(DEPOSIT)}
+👤 ${user.name}
+📞 ${user.phone}
 
-Отправить заявку?
+Отправить заявку?`,
       confirmMenu()
     );
   }
 });
 
-bot.on("callback_query", async (q) => {
-  const chatId = q.message.chat.id;
-  const data = q.data;
-
-  if (!users[chatId]) users[chatId] = {};
-  const user = users[chatId];
-
-  if (data === "cancel") {
-    users[chatId] = {};
-    return bot.sendMessage(chatId, "Заявка отменена.", mainMenu());
-  }
-
-  if (data === "send_request") {
-    const requestText = buildRequestText(user, q.from);
-
-    try {
-      await bot.sendMessage(GROUP_ID, requestText);
-    } catch (err) {
-      console.error("Ошибка отправки заявки в группу:", err.message);
-
-      return bot.sendMessage(
-        chatId,
-        "❌ Заявка заполнена, но не отправилась в группу. Проверьте GROUP_ID и права бота."
-      );
-    }
-
-    users[chatId] = {};
-
-    return bot.sendMessage(
-      chatId,
-`━━━━━━━━━━━━━━
-
-✅ Заявка отправлена
-
-Наш менеджер свяжется с вами
-в ближайшее время.
-
-━━━━━━━━━━━━━━`,
-      mainMenu()
-    );
-  }
-});
-
-console.log("ABARTH SOCHI BOT v2.0 запущен");
+console.log("ABARTH SOCHI BOT STARTED");
