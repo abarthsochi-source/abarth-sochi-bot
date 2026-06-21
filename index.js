@@ -1,5 +1,10 @@
 const TelegramBot = require("node-telegram-bot-api");
+const http = require("http");
 
+http.createServer((req, res) => {
+  res.writeHead(200);
+  res.end("ABARTH SOCHI BOT OK");
+}).listen(process.env.PORT || 3000);
 const TOKEN = process.env.BOT_TOKEN;
 const GROUP_ID = process.env.GROUP_ID;
 
