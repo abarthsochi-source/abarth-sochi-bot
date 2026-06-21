@@ -204,5 +204,8 @@ bot.on("message", (msg) => {
     );
   }
 });
-
+bot.on("photo", (msg) => {
+  const photo = msg.photo[msg.photo.length - 1];
+  bot.sendMessage(msg.chat.id, `file_id:\n${photo.file_id}`);
+});
 console.log("ABARTH SOCHI BOT запущен");
